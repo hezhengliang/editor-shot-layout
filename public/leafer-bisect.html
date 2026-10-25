@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>ingredient bisect</title>
+<style>
+  html, body { margin: 0; height: 100%; }
+  #stage { width: 100vw; height: 100vh; }
+  #stage.fixed { position: fixed; inset: 0; display: flex; flex-direction: column; }
+  #stage.fixed #view { flex: none; }
+  /* 显式尺寸(复现里已验证可修复原生 resize) */
+  #view { position: relative; margin-left: 240px; margin-top: 49px; width: calc(100vw - 240px); height: calc(100vh - 49px); overflow: hidden; }
+</style>
+</head>
+<body>
+<div id="stage"><div id="view"></div></div>
+<script type="module">
+import { App, Group, Rect, Text, Line } from '/node_modules/leafer-editor/dist/web.module.js'
+
+const add = (new URLSearchParams(location.search).get('add') || '').split(',')
+const has = (k) => add.includes(k)
+if (has('fixed')) document.getElementById('stage').classList.add('fixed')
+
+const editorCfg = has('extras')
+  ? { resizeable: true, rotateable: false, skewable: false, flipable: false, pointSize: 14, pointRadius: 5 }
+  : { resizeable: true }
+
+const app = new App({
+  view: document.getElementById('view'),
+  editor: editorCfg,
+  tree: { type: 'design' },
+  ...(has('configs') ? { fill: '#e9edf3', wheel: { preventDefault: true }, touch: { preventDefault: true }, pointer: { preventDefaultMenu: true }, zoom: { min: 0.02, max: 64 } } : {}),
+})
+window.__app = app
+
+const group = new Group({ x: 300, y: 300, editable: true })
+group.add(new Rect({ x: 0, y: 0, width: 500, height: 500, fill: '#60a5fa', cornerRadius: 2, stroke: '#cbd5e1', strokeWidth: 2 }))
+group.add(new Text({ text: '1×1', fill: '#0f172a', fontSize: 110, textAlign: 'center', verticalAlign: 'middle', width: 500, height: 500, hittable: false }))
+app.tree.add(group)
+window.__rect = group
+
+if (has('ednested')) {
+  const outer = new Group({ x: 50, y: 50, editable: true })
+  // 把已有 group 挪进 editable 外壳
+  app.tree.remove(group)
+  outer.add(group)
+  app.tree.add(outer)
+}
+if (has('ruler')) {
+  const ruler = new Group({ hittable: false })
+  ruler.add(new Rect({ x: 0, y: 0, width: 900, height: 26, fill: '#ffffff' }))
+  ruler.add(new Line({ x: 0, y: 26, points: [0, 0, 900, 0], stroke: '#cbd5e1', strokeWidth: 1 }))
+  app.sky.add(ruler)
+}
+if (has('dims')) app.tree.add(new Group({ hittable: false }))
+if (has('skygrp')) app.sky.add(new Group({ hittable: false }))
+if (new URLSearchParams(location.search).get('ro')) {
+  const el = document.getElementById('view')
+  const ro = new ResizeObserver(() => {
+    app.resize({ width: el.clientWidth, height: el.clientHeight })
+  })
+  ro.observe(el)
+}
+window.__ready = true
+</script>
+</body>
+</html>
