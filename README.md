@@ -1,5 +1,11 @@
-# Vue 3 + TypeScript + Vite
+# editor-shot-layout
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+基于 leafer-editor 的半导体 Shot/Die 布局编辑器:无限画布 + 标尺,Shot 槽位阵列(内圈/外圈 scribe 标注),Die 模板库与填充,晶圆图与 Bit Map 检视;Tweakpane 属性面板,Tailwind CSS 4 主题(light/dark)。
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+## 开发
+
+```bash
+pnpm install
+pnpm dev
+pnpm build
+```
