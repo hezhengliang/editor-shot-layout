@@ -65,7 +65,7 @@ import {
   onEditorMove,
 } from '../editor/ops'
 import { drawRuler, applyCanvasTheme, fitView, zoomBy } from '../editor/draw'
-import { rebuildPane, buildLeftPane } from '../editor/panes'
+import { rebuildPane, buildLeftPane, rightTab, RIGHT_TABS, setRightTab } from '../editor/panes'
 
 // 模板 string ref(pane 容器,由 panes.ts 读取)
 void paneRef
@@ -620,6 +620,21 @@ onUnmounted(() => {
       </div>
 
       <aside class="sidebar right w-60 shrink-0 overflow-y-auto border-l border-input bg-panel p-4 text-fg">
+        <div class="mb-2 flex gap-1">
+          <button
+            v-for="t in RIGHT_TABS"
+            :key="t.key"
+            class="flex-1 cursor-pointer rounded-md border px-2 py-1 text-xs"
+            :class="
+              rightTab === t.key
+                ? 'border-iborder bg-btn font-semibold text-fg'
+                : 'border-transparent text-dim hover:text-fg'
+            "
+            @click="setRightTab(t.key)"
+          >
+            {{ t.label }}
+          </button>
+        </div>
         <div ref="paneRef" class="pane-host w-full" />
       </aside>
     </div>
@@ -705,9 +720,12 @@ onUnmounted(() => {
 
 /* 左侧模块标题左对齐 */
 .sidebar.left .pane-host :deep(.tp-rotv_t) {
-  text-align: left;
+  /* text-align: left; */
   justify-content: flex-start;
-  padding-left: 6px;
+  /* padding-left: 6px; */
+}
+.sidebar.left .pane-host:deep(.tp-rotv_b){
+  padding: 0 8px;
 }
 
 /* Tweakpane 根/文件夹标题 shadcn 化 + 面板圆角 */
@@ -716,9 +734,10 @@ onUnmounted(() => {
 }
 
 .pane-host :deep(.tp-rotv_t) {
-  padding: 6px 8px;
+  padding: 2px;
   font-size: 10px;
   font-weight: 600;
+  text-align: left;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--tp-label-foreground-color);

@@ -1,4 +1,4 @@
-import { reactive, watchEffect } from 'vue'
+import { reactive, ref, watchEffect } from 'vue'
 import { Pane } from 'tweakpane'
 import {
   params,
@@ -103,10 +103,28 @@ export function rebuildPaneSoon() {
   setTimeout(() => rebuildPane(), 0)
 }
 
+// 右侧属性面板:Tab 结构(信息 = 只读,配置 = 可调整);操作固定在最底部,不占 Tab
+export type RightTab = 'info' | 'config'
+export const rightTab = ref<RightTab>('config')
+export const RIGHT_TABS: { key: RightTab; label: string }[] = [
+  { key: 'info', label: '信息' },
+  { key: 'config', label: '配置' },
+]
+export function setRightTab(t: RightTab) {
+  rightTab.value = t
+  rebuildPane()
+}
+
 export function rebuildPane() {
   if (!paneRef.value) return
-  pane?.dispose()
-  setPane(new Pane({ container: paneRef.value, title: '属性编辑' }))
+  if (!pane) {
+    // 有自绘 Tab 栏,Pane 不再渲染标题行
+    setPane(new Pane({ container: paneRef.value }))
+  } else {
+    // Pane 类型未暴露 children,经 Rack 根访问 blade 列表逐个 dispose
+    const rack = pane as unknown as { children: { dispose(): void }[] }
+    for (const blade of [...rack.children]) blade.dispose()
+  }
   const safe = (label: string, fn: () => void) => {
     try {
       fn()
@@ -118,19 +136,28 @@ export function rebuildPane() {
   const die = selected.value
   const shot = selectedShot.value
 
-  if (shot) {
-    safe(`Shot#${shot.uid}`, () => buildShotPane(shot))
-  }
-  if (die) {
-    safe(die.preset.name, () => buildDiePane(die))
+  if (rightTab.value === 'info') {
+    if (shot) {
+      safe(`Shot#${shot.uid}`, () => buildShotInfo(shot))
+    }
+    if (die) {
+      safe(die.preset.name, () => buildDieInfo(die))
+    }
+    safe('信息', () => {
+      const info = pane!.addFolder({ title: '画布统计' })
+      info.addBinding(mon, 'dies', { label: 'Die 数量', readonly: true, interval: 300 })
+      info.addBinding(mon, 'shots', { label: 'Shot 数量', readonly: true, interval: 300 })
+    })
+  } else {
+    if (shot) {
+      safe(`Shot#${shot.uid}`, () => buildShotConfig(shot))
+    }
+    if (die) {
+      safe(die.preset.name, () => buildDieConfig(die))
+    }
   }
 
-  safe('信息', () => {
-    const info = pane!.addFolder({ title: '信息' })
-    info.addBinding(mon, 'dies', { label: 'Die 数量', readonly: true, interval: 300 })
-    info.addBinding(mon, 'shots', { label: 'Shot 数量', readonly: true, interval: 300 })
-  })
-
+  // 操作固定在最底部,与 Tab 无关
   safe('操作', () => {
     const ops = pane!.addFolder({ title: '操作' })
     ops.addButton({ title: '删除选中' }).on('click', deleteSelected)
@@ -139,8 +166,8 @@ export function rebuildPane() {
   })
 }
 
-function buildShotPane(shot: Shot) {
-    // 模块一:信息(只读)
+function buildShotInfo(shot: Shot) {
+    // 信息(只读)
     const info = pane!.addFolder({ title: `Shot#${shot.uid} 信息` })
     const sc = scribeInfo(shot)
     const infoProxy = {
@@ -161,8 +188,9 @@ function buildShotPane(shot: Shot) {
     info.addBinding(infoProxy, 'pos', { label: '位置 X, Y', readonly: true })
     info.addBinding(infoProxy, 'util', { label: '场利用率 (Die/Shot)', readonly: true })
     info.addBinding(infoProxy, 'field', { label: '曝光场适配', readonly: true })
+}
 
-    // 模块二:配置(可调整)
+function buildShotConfig(shot: Shot) {
     const f = pane!.addFolder({ title: 'Shot 配置' })
 
     // 排布预设(半导体常见阵列):选预设一键设置槽位阵列
@@ -280,11 +308,10 @@ function buildShotPane(shot: Shot) {
 
 }
 
-function buildDiePane(die: PlacedDie) {
+function buildDieInfo(die: PlacedDie) {
     const posText = die.shot
       ? `Shot#${die.shot.uid} · 槽位 (${die.slot?.i}, ${die.slot?.j})`
       : `棋盘 (${die.col}, ${die.row})`
-    // 模块一:信息(只读)
     const info = pane!.addFolder({ title: `${die.preset.name} 信息` })
     const ip = {
       位置: posText,
@@ -292,8 +319,9 @@ function buildDiePane(die: PlacedDie) {
     }
     info.addBinding(ip, '位置', { readonly: true })
     info.addBinding(ip, '尺寸', { readonly: true })
+}
 
-    // 模块二:配置(可调整)
+function buildDieConfig(die: PlacedDie) {
     const f = pane!.addFolder({ title: 'Die 配置' })
     if (die.shot) {
       const s = die.shot
