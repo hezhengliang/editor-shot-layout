@@ -1,0 +1,14 @@
+[package]
+name = "die-layout-editor"
+version = "0.1.0"
+edition = "2021"
+description = "egui 复刻的 Shot/Die 布局编辑器(desktop)"
+
+[dependencies]
+eframe = "0.31"
+egui = "0.31"
+image = "0.25"
+ureq = "2"
+
+[profile.release]
+opt-level = 2
