@@ -1,0 +1,14 @@
+{
+  "name": "@wafermap/client",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "app:install": "pnpm tauri:build && rm -rf '/Applications/Shot Layout.app' && cp -R 'src-tauri/target/release/bundle/macos/Shot Layout.app' /Applications/ && open -a 'Shot Layout'"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.5.0"
+  }
+}

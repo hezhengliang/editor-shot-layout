@@ -1,0 +1,12 @@
+[package]
+name = "shot-layout"
+version = "0.1.0"
+description = "Shot Layout 桌面客户端(Tauri 壳,加载打包后的 web 端)"
+edition = "2021"
+rust-version = "1.77"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["devtools"] }
